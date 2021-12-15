@@ -29,11 +29,14 @@ static int menu() {
 static void addFileDialog(FileList &file_list) {
     char name[MAX_WORD_SIZE];
     char date[MAX_WORD_SIZE];
+    int size = 0;
     std::cout << ">> Please, enter file name:\n<< ";
     std::cin >> name;
     std::cout << ">> Please, enter file creation date:\n<< ";
     std::cin >> date;
-    file_list.addFile(name, date);
+    std::cout << ">> Please, enter file size:\n<< ";
+    std::cin >> size;
+    file_list.addFile(name, date, size);
 }
 
 static void deleteFileDialog(FileList &file_list) {
@@ -47,12 +50,15 @@ static void findByNameDialog(FileList &file_list) {
     char name[MAX_WORD_SIZE];
     std::cout << ">> Please, enter file name:\n<< ";
     std::cin >> name;
-    const char *res = file_list.findByName(name);
+    const File *res = file_list.findByName(name);
     if (!res) {
         std::cout << ">> No such file.\n";
         return;
     }
-    std::cout << ">> Date: " << res << std::endl;
+    std::cout << ">> Name: " << res->name
+              << ">> Date: " << res->date
+              << ">> Size: " << res->size
+              << std::endl;
 }
 
 static void toFileFilesDialog(FileList &file_list) {
