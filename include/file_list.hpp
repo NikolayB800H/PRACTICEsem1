@@ -1,28 +1,35 @@
 #pragma ONCE
 
-constexpr size_t MAX_WORDS_CNT = 100;
-constexpr size_t MAX_WORD_SIZE = 31;
+#include <vector>
+#include <string>
+
+enum RetStatus {
+    OK,
+    ERROR
+};
 
 struct File {
-    char name[MAX_WORD_SIZE];
-    char date[MAX_WORD_SIZE];
+    std::string name;
+    std::string date;
     int size;
 
+    File(const std::string &name, const std::string &date, int size);
+    // File &operator=(const File &other) = default;
     void swap(File &other);
 };
 
 class FileList {
     int files_cnt;
-    File file_arr[MAX_WORDS_CNT];
+    std::vector<File> file_arr;
 
-    void binSearch(const char *name, int &back, int &front) const;
-    void emplaceBack(const char *name, const char *date, int size);
+    void binSearch(const std::string &name, int &back, int &front) const;
+    void emplaceBack(const std::string &name, const std::string &date, int size);
 
 public:
-    FileList();
-    void addFile(const char *name, const char *date, int size);
-    void deleteFile(const char *name);
-    const File *findByName(const char *name) const;
+    // FileList();
+    RetStatus addFile(const std::string &name, const std::string &date, int size);
+    RetStatus deleteFile(const std::string &name);
+    const File *findByName(const std::string &name) const;
     friend
     std::ostream &operator<<(std::ostream &os, const FileList &file_list);
     friend
