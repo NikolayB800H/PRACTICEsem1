@@ -1,27 +1,73 @@
 #include <fstream>
 #include <iostream>
+#include <termios.h>
+#include <ctype.h>
+#include <unistd.h>
 
 #include "file_list.hpp"
 
-static int menu() {
-    int choice = 0;
-    std::cout << "==================[Меню списка файлов]===================\n"
-                 "\t1 - Добавить новый файл\n"
-                 "\t2 - Изменить файл\n"
-                 "\t3 - Удалить файл\n"
-                 "\t4 - Показать файл\n"
-                 "\t5 - Показать список файлов\n"
-                 "\t6 - Сохранить список файлов в файл\n"
-                 "\t7 - Загрузить список файлов из файла\n"
-                 "=========================================================\n"
-                 "\t8 - Выход\n"
-                 "=========================================================\n"
+static char getch() {
+    struct termios old_tio, new_tio;
+    char c;
+    tcgetattr(STDIN_FILENO, &old_tio);
+    new_tio = old_tio;
+    new_tio.c_lflag &= (~ICANON & ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
+    //c = getchar();
+    //std::cin.get(&c, 1);
+    std::cin >> c;
+    tcsetattr(STDIN_FILENO, TCSANOW, &old_tio);
+    return c;
+}
+
+static void getSize(int &size) {
+    std::cin.ignore('\n');
+    std::string size_str = "";
+    char getchar_ret = 0;
+    while (getchar_ret != '.') {
+        getchar_ret = getch();
+        if (!(getchar_ret == '\b' || ('0' <= getchar_ret && getchar_ret <= '9'))) {
+            continue;
+        }
+        if (getchar_ret == 127) {
+            if (size_str.size()) {
+                size_str.pop_back();
+                //putchar('\b');
+                //putchar(' ');
+                //putchar('\b');
+                std::cout.put('\b');
+                std::cout.put(' ');
+                std::cout.put('\b');
+            }
+        } else if ('0' < getchar_ret || getchar_ret < '9') {
+            if (!size_str.size() && '0' == getchar_ret) {
+                continue;
+            }
+            //putchar(getchar_ret);
+            std::cout.put(getchar_ret);
+            size_str.push_back(getchar_ret);
+        }
+    }
+    try {
+        size = std::stoi(size_str);
+    } catch (std::invalid_argument err) {
+        std::cout << std::endl << "Error: " << err.what() << std::endl;
+    }
+}
+
+static int menu(size_t variants_cnt, const std::string (&variants)[]) {
+    std::cout << "=================[Меню выбора действий]==================\n";
+    for (size_t i = 0; i < variants_cnt; ++i) {
+        std::cout << '\t' << i + 1 << " - " << variants[i] << std::endl;
+    }
+    std::cout << "=========================================================\n"
                  ">> Ваш выбор:\n<< ";
+    int choice = 0;
     std::cin >> choice;
-    while (std::cin.fail()) {
-        std::cout << ">> Ввод должен быть натуральным числом. Попробуйте ещё:\n<< ";
-        std::cin.clear();
-        std::cin.ignore(10, '\n');
+    while (std::cin.fail() || (1 > choice || choice > variants_cnt)) {
+        std::cout << ">> Ввод должен быть натуральным числом от 1 до " << variants_cnt << ". Попробуйте ещё:\n<< ";
+        std::cin.clear();  // unset failbit
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');  // skip bad input
         std::cin >> choice;
     }
     return choice;
@@ -36,7 +82,8 @@ static void addFileDialog(FileList &file_list) {
     std::cout << ">> Теперь, введите дату:\n<< ";
     std::cin >> date;
     std::cout << ">> Теперь, введите размер:\n<< ";
-    std::cin >> size;
+    //std::cin >> size;
+    getSize(size);
     if (file_list.addFile(name, date, size) == ERROR) {
         std::cout << ">> Файл с таким именем уже есть.\n";
     } else {
@@ -48,17 +95,44 @@ static void editFileDialog(FileList &file_list) {
     std::string name;
     std::cout << ">> Пожалуйста, введите имя изменяемого файла:\n<< ";
     std::cin >> name;
+    const File *res = file_list.findByName(name);
+    if (!res) {
+        std::cout << ">> Файла с таким именем нет.\n";
+        return;
+    }
+    std::string date = res->date;
+    int size = res->size;
     if (file_list.deleteFile(name) == ERROR) {
         std::cout << ">> Файла с таким именем нет.\n";
+        return;
     }
-    std::string date;
-    int size = 0;
-    std::cout << ">> Пожалуйста, введите новое имя файла:\n<< ";
-    std::cin >> name;
-    std::cout << ">> Теперь, введите новую дату:\n<< ";
-    std::cin >> date;
-    std::cout << ">> Теперь, введите новый размер:\n<< ";
-    std::cin >> size;
+    std::cout << ">> Что вы хотите изменить в файле " << name
+              << "[дата: " << date
+              << ", размер: " << size
+              << "] ?" << std::endl;
+    switch (menu(4, {
+            std::string("Имя"),
+            std::string("Дату"),
+            std::string("Размер"),
+            std::string("Ничего, назад")
+        })) {
+        case 1: {
+            std::cout << ">> Пожалуйста, введите новое имя файла:\n<< ";
+            std::cin >> name;
+            break;
+        }
+        case 2:
+            std::cout << ">> Теперь, введите новую дату:\n<< ";
+            std::cin >> date;
+            break;
+        case 3:
+            std::cout << ">> Теперь, введите новый размер:\n<< ";
+            //std::cin >> size;
+            getSize(size);
+            break;
+        case 4: break;
+        default: std::cout << ">> Выбор должен быть натуральным числом от 1 до 4.\n";
+    }
     if (file_list.addFile(name, date, size) == ERROR) {
         std::cout << ">> Ошибка изменения файла.\n";
     } else {
@@ -146,7 +220,16 @@ int main(int argc, char const *argv[]) {
     FileList file_list;
     autoLoad(file_list);
     while (true) {
-        switch (menu()) {
+        switch (menu(8, {
+            std::string("Добавить новый файл"),
+            std::string("Изменить файл"),
+            std::string("Удалить файл"),
+            std::string("Показать файл"),
+            std::string("Показать список файлов"),
+            std::string("Сохранить список файлов в файл"),
+            std::string("Загрузить список файлов из файла"),
+            std::string("Выход")
+        })) {
             case 1: addFileDialog(file_list); break;
             case 2: editFileDialog(file_list); break;
             case 3: deleteFileDialog(file_list); break;
