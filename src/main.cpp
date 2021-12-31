@@ -1,58 +1,10 @@
 #include <fstream>
 #include <iostream>
-#include <termios.h>
-#include <ctype.h>
-#include <unistd.h>
 
 #include "file_list.hpp"
 
-static char getch() {
-    struct termios old_tio, new_tio;
-    char c;
-    tcgetattr(STDIN_FILENO, &old_tio);
-    new_tio = old_tio;
-    new_tio.c_lflag &= (~ICANON & ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
-    //c = getchar();
-    //std::cin.get(&c, 1);
-    std::cin >> c;
-    tcsetattr(STDIN_FILENO, TCSANOW, &old_tio);
-    return c;
-}
-
 static void getSize(int &size) {
-    std::cin.ignore('\n');
-    std::string size_str = "";
-    char getchar_ret = 0;
-    while (getchar_ret != '.') {
-        getchar_ret = getch();
-        if (!(getchar_ret == '\b' || ('0' <= getchar_ret && getchar_ret <= '9'))) {
-            continue;
-        }
-        if (getchar_ret == 127) {
-            if (size_str.size()) {
-                size_str.pop_back();
-                //putchar('\b');
-                //putchar(' ');
-                //putchar('\b');
-                std::cout.put('\b');
-                std::cout.put(' ');
-                std::cout.put('\b');
-            }
-        } else if ('0' < getchar_ret || getchar_ret < '9') {
-            if (!size_str.size() && '0' == getchar_ret) {
-                continue;
-            }
-            //putchar(getchar_ret);
-            std::cout.put(getchar_ret);
-            size_str.push_back(getchar_ret);
-        }
-    }
-    try {
-        size = std::stoi(size_str);
-    } catch (std::invalid_argument err) {
-        std::cout << std::endl << "Error: " << err.what() << std::endl;
-    }
+    std::cin >> size;
 }
 
 static int menu(size_t variants_cnt, const std::string (&variants)[]) {
@@ -66,8 +18,8 @@ static int menu(size_t variants_cnt, const std::string (&variants)[]) {
     std::cin >> choice;
     while (std::cin.fail() || (1 > choice || choice > variants_cnt)) {
         std::cout << ">> Ввод должен быть натуральным числом от 1 до " << variants_cnt << ". Попробуйте ещё:\n<< ";
-        std::cin.clear();  // unset failbit
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');  // skip bad input
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         std::cin >> choice;
     }
     return choice;
@@ -118,15 +70,22 @@ static void editFileDialog(FileList &file_list) {
         })) {
         case 1: {
             std::cout << ">> Пожалуйста, введите новое имя файла:\n<< ";
-            std::cin >> name;
+            bool already_exists = false;
+            do {
+                std::cin >> name;
+                already_exists = static_cast<bool>(file_list.findByName(name));
+                if (already_exists) {
+                    std::cout << ">> Файл с таким именем уже есть, придумайте другое имя:\n<< ";
+                }
+            } while (already_exists);
             break;
         }
         case 2:
-            std::cout << ">> Теперь, введите новую дату:\n<< ";
+            std::cout << ">> Пожалуйста, введите новую дату файла:\n<< ";
             std::cin >> date;
             break;
         case 3:
-            std::cout << ">> Теперь, введите новый размер:\n<< ";
+            std::cout << ">> Пожалуйста, введите новый размер файла:\n<< ";
             //std::cin >> size;
             getSize(size);
             break;

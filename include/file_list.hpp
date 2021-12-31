@@ -14,7 +14,6 @@ struct File {
     int size;
 
     File(const std::string &name, const std::string &date, int size);
-    // File &operator=(const File &other) = default;
     void swap(File &other);
 };
 
@@ -26,7 +25,6 @@ class FileList {
     void emplaceBack(const std::string &name, const std::string &date, int size);
 
 public:
-    // FileList();
     RetStatus addFile(const std::string &name, const std::string &date, int size);
     RetStatus deleteFile(const std::string &name);
     const File *findByName(const std::string &name) const;

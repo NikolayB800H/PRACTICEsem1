@@ -1,5 +1,5 @@
 build:
-	g++ -std=c++17 src/* -I include -o main.out
+	g++ -std=c++17 src/* -I include -o FileList
 
 run:
-	valgrind ./main.out
+	valgrind ./FileList

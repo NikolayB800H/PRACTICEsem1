@@ -14,7 +14,6 @@ void File::swap(File &other) {
 
 void FileList::binSearch(const std::string &name, int &back, int &front) const {
     back = -1;
-    // front = files_cnt;
     front = file_arr.size();
     int mid = 0;
     while (front > back + 1) {
@@ -36,7 +35,6 @@ void FileList::binSearch(const std::string &name, int &back, int &front) const {
         front = back;
         return;
     }
-    // if (front != files_cnt && !strcmp(name, file_arr[front].name)) {
     if (front != file_arr.size() && !strcmp(name.c_str(), file_arr[front].name.c_str())) {
         back = front;
         return;
@@ -44,24 +42,12 @@ void FileList::binSearch(const std::string &name, int &back, int &front) const {
 }
 
 void FileList::emplaceBack(const std::string &name, const std::string &date, int size) {
-    //strncpy(file_arr[files_cnt].name, name, MAX_WORD_SIZE - 1);
-    // file_arr[files_cnt].name = name;
-    //file_arr[files_cnt].name[MAX_WORD_SIZE - 1] = 0;
-    //strncpy(file_arr[files_cnt].date, date, MAX_WORD_SIZE - 1);
-    // file_arr[files_cnt].date = date;
-    //file_arr[files_cnt].date[MAX_WORD_SIZE - 1] = 0;
-    // file_arr[files_cnt].size = size;
-    // ++files_cnt;
     file_arr.emplace_back(name, date, size);
 }
-
-/*FileList::FileList() : files_cnt(0) {
-}*/
 
 RetStatus FileList::addFile(const std::string &name, const std::string &date, int size) {
     int back = 0;
     int front = 0;
-    // if (!files_cnt) {
     if (!file_arr.size()) {
         emplaceBack(name, date, size);
         return OK;
@@ -71,7 +57,6 @@ RetStatus FileList::addFile(const std::string &name, const std::string &date, in
         return ERROR;
     }
     emplaceBack(name, date, size);
-    // for (int adding = files_cnt - 1; adding != front; --adding) {
     for (int adding = file_arr.size() - 1; adding != front; --adding) {
         file_arr[adding].swap(file_arr[adding - 1]);
     }
@@ -81,7 +66,6 @@ RetStatus FileList::addFile(const std::string &name, const std::string &date, in
 RetStatus FileList::deleteFile(const std::string &name) {
     int back = 0;
     int front = 0;
-    // if (!files_cnt) {
     if (!file_arr.size()) {
         return ERROR;
     }
@@ -89,19 +73,16 @@ RetStatus FileList::deleteFile(const std::string &name) {
     if (back != front) {
         return ERROR;
     }
-    // for (int deleting = front; deleting != files_cnt - 1; ++deleting) {
     for (int deleting = front; deleting != file_arr.size() - 1; ++deleting) {
         file_arr[deleting].swap(file_arr[deleting + 1]);
     }
     file_arr.pop_back();
-    //--files_cnt;
     return OK;
 }
 
 const File *FileList::findByName(const std::string &name) const {
     int back = 0;
     int front = 0;
-    //if (!files_cnt) {
     if (!file_arr.size()) {
         return nullptr;
     }
@@ -113,9 +94,7 @@ const File *FileList::findByName(const std::string &name) const {
 }
 
 std::ostream &operator<<(std::ostream &os, const FileList &file_list) {
-    // os << file_list.files_cnt << '\n';
     os << file_list.file_arr.size() << '\n';
-    // for (int i = 0; i < file_list.files_cnt; ++i) {
     for (int i = 0; i < file_list.file_arr.size(); ++i) {
         os << '\t' << file_list.file_arr[i].name << ' ' << file_list.file_arr[i].date << ' ' << file_list.file_arr[i].size << '\n';
     }
